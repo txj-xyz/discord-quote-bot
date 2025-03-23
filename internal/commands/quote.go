@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -57,19 +58,31 @@ func HandleQuoteCommand(quoteChannelID string) func(s *discordgo.Session, i *dis
 			}
 		}
 
+		// Fetch the user information to get the username
+		quotedUserInfo, err := s.User(userID)
+		if err != nil {
+			log.Printf("Error fetching user information: %v", err)
+			return
+		}
+
 		// Create the embed
 		embed := &discordgo.MessageEmbed{
-			Title:       "Quote",
-			Description: quote,
+			Author: &discordgo.MessageEmbedAuthor{
+				Name: fmt.Sprintf("@%s", quotedUserInfo.Username),
+				IconURL: quotedUserInfo.AvatarURL("128"),
+			},
+			Description: fmt.Sprintf("**\"%v\"**", quote),
 			Color:       0x00AAFF, // Blue color
 			Footer: &discordgo.MessageEmbedFooter{
-				Text: fmt.Sprintf("Quoted by %s", i.Member.User.Username),
+				IconURL: i.Member.AvatarURL("128"),
+				Text: fmt.Sprintf("@%s", i.Member.User.Username),
 			},
+			Timestamp: time.Now().Format(time.RFC3339),
 		}
 
 		// Send the message to the quote channel
-		_, err = s.ChannelMessageSendComplex(quoteChannelID, &discordgo.MessageSend{
-			Content: fmt.Sprintf("<@%s> was quoted:", userID),
+		quoteMessageposted, err := s.ChannelMessageSendComplex(quoteChannelID, &discordgo.MessageSend{
+			Content: fmt.Sprintf("<@%s>:", userID),
 			Embeds:  []*discordgo.MessageEmbed{embed},
 		})
 
@@ -87,7 +100,11 @@ func HandleQuoteCommand(quoteChannelID string) func(s *discordgo.Session, i *dis
 		}
 
 		// Send a success message to the user
-		successMsg := "Quote posted successfully!"
+		// successMsg := "Quote posted successfully!"
+		successMsg := fmt.Sprintf("Quote posted successfully!\nhttps://discord.com/channels/%s/%s/%s", 
+			i.Interaction.GuildID,
+			quoteMessageposted.ChannelID,
+			quoteMessageposted.ID)
 		_, respErr := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 			Content: &successMsg,
 		})
