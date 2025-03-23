@@ -1,0 +1,9 @@
+bot:
+  # Your Discord bot token - replace with your actual token
+  token: "BOT_TOKEN"
+  # Optional: Guild ID for testing commands (comment out for global commands)
+  guild_id: "GUILD_ID"
+
+quote:
+  # Channel ID where quotes will be posted
+  channel: "CHANNEL_ID" 
